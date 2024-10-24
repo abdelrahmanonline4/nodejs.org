@@ -6,12 +6,12 @@ pipeline {
             steps {
                 script {
                     if (!fileExists('nodejs.org')) {
-                        sh 'git clone https://github.com/abdelrahmanonline4/nodejs.org'
+                        sh 'sudo git clone https://github.com/abdelrahmanonline4/nodejs.org'
                     } else {
                         dir('nodejs.org') {
-                            sh 'git fetch'
-                            sh 'git checkout Master'
-                            sh 'git pull'
+                            sh 'sudo git fetch'
+                            sh 'sudo git checkout Master'
+                            sh 'sudo git pull'
                         }
                     }
                 }
@@ -20,22 +20,22 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('nodejs.org') {
-                    // استخدم المسار لـ node و npm مباشرةً
-                    sh 'export PATH="/home/qmo/.nvm/versions/node/v18.20.4/bin:$PATH" && npm install'
+                    // استخدم المسار لـ node و npm مباشرةً مع sudo
+                    sh 'export PATH="/home/qmo/.nvm/versions/node/v18.20.4/bin:$PATH" && sudo npm install'
                 }
             }
         }
         stage('Run Tests') {
             steps {
                 dir('nodejs.org') {
-                    sh 'export PATH="/home/qmo/.nvm/versions/node/v18.20.4/bin:$PATH" && npm test'
+                    sh 'export PATH="/home/qmo/.nvm/versions/node/v18.20.4/bin:$PATH" && sudo npm test'
                 }
             }
         }
         stage('Build Docker Image') {
             steps {
                 dir('nodejs.org') {
-                    sh 'docker build -t bedomm180/nodejs.org .'
+                    sh 'sudo docker build -t bedomm180/nodejs.org .'
                 }
             }
         }
@@ -43,8 +43,8 @@ pipeline {
             steps {
                 dir('nodejs.org') {
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh 'echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin'
-                        sh 'docker push bedomm180/nodejs.org'
+                        sh 'echo "$DOCKER_PASSWORD" | sudo docker login -u "$DOCKER_USERNAME" --password-stdin'
+                        sh 'sudo docker push bedomm180/nodejs.org'
                     }
                 }
             }
