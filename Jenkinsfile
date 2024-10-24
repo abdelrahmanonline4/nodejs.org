@@ -1,66 +1,51 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_HUB_CREDENTIALS = 'docker-hub-credentials' // ID الخاص بـ Docker Hub Credentials
-        DOCKER_IMAGE = 'bedomm180/ci-app' // اسم الصورة على Docker Hub
-        GITHUB_CREDENTIALS = 'github-credentials' // ID الخاص بـ GitHub Credentials
-        GITHUB_REPO = 'https://github.com/abdelrahmanonline4/nodejs.org' // رابط الـ GitHub Repo
-    }
-
     stages {
-        stage('Checkout or Fetch Code') {
-            steps {
-                // جلب الكود من GitHub باستخدام الـ credentials
-                git credentialsId: "${GITHUB_CREDENTIALS}", url: "${GITHUB_REPO}"
-            }
-        }
-
-        stage('Install Dependencies') {
+        stage("Checkout code") {
             steps {
                 script {
-                    // تثبيت التبعيات باستخدام npm
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Run Unit Testing') {
-            steps {
-                script {
-                    // تشغيل اختبارات الوحدة
-                    sh 'npm test'
-                }
-            }
-        }
-
-        stage('Dockerize') {
-            steps {
-                script {
-                    // بناء الصورة باستخدام Dockerfile الموجود في المستودع
-                    docker.build("${DOCKER_IMAGE}")
-                }
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    // استخدام الـ credentials لدفع الصورة إلى Docker Hub
-                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_HUB_CREDENTIALS}") {
-                        docker.image("${DOCKER_IMAGE}").push('latest')
+                    if (!fileExists('nodejs.org')) {
+                        sh 'git clone https://github.com/abdelrahmanonline4/nodejs.org'
+                    }
+                    dir('nodejs.org') {
+                        sh 'git fetch origin'
+                        sh 'git checkout main'
+                        sh 'git pull'
                     }
                 }
             }
         }
-    }
-
-    post {
-        success {
-            echo 'Build, test, and push completed successfully!'
+        stage("Install dependencies") {
+            steps {
+                dir('nodejs.org') {
+                    sh 'npm ci'
+                }
+            }
         }
-        failure {
-            echo 'Build, test, or push failed!'
+        stage("Run unit testing") {
+            steps {
+                dir('nodejs.org') {
+                    sh 'npm run test'
+                }
+            }
+        }
+        stage("Dockerize") {
+            steps {
+                dir('nodejs.org') {
+                    sh 'docker build -t bedomm180/nodejs.org .'
+                }
+            }
+        }
+        stage("Push Docker image") {
+            steps {
+                dir('nodejs.org') {
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh 'echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin'
+                        sh 'docker push bedomm180/nodejs.org'
+                    }
+                }
+            }
         }
     }
 }
