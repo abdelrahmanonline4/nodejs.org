@@ -20,7 +20,6 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('nodejs.org') {
-                    // استخدم المسار لـ node و npm مباشرةً مع sudo
                     sh 'export PATH="/home/qmo/.nvm/versions/node/v18.20.4/bin:$PATH" && sudo npm install'
                 }
             }
@@ -35,7 +34,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('nodejs.org') {
-                    sh 'sudo docker build -t bedomm180/nodejs.org .'
+                    sh 'sudo docker build -t bedomm180/nodejs.org -f Dockerfile .'
                 }
             }
         }
@@ -60,4 +59,3 @@ pipeline {
         }
     }
 }
-
