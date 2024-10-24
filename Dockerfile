@@ -1,22 +1,23 @@
-# مرحلة البناء
-FROM node:20-alpine AS build
+FROM node:20 AS builder
 
-WORKDIR /usr/src/app
-
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
+RUN npm run build
 
-RUN npm install --legacy-peer-deps
+FROM node:20 AS runner
 
-# مرحلة الإنتاج
-FROM node:20-alpine
-
-WORKDIR /usr/src/app
-
-COPY --from=build /usr/src/app .
-
-ENV HOST=0.0.0.0
-
+WORKDIR /app
+COPY --from=builder /app ./
 EXPOSE 3000
+CMD ["node", "build/index.js"]
 
+FROM node:20 AS developer
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+EXPOSE 3000
 CMD ["npx", "turbo", "dev"]
-
