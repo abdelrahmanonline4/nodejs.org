@@ -10,9 +10,9 @@ pipeline {
                         sh 'git clone https://github.com/abdelrahmanonline4/nodejs.org'
                     }
                     dir('nodejs.org') {
-                        // Fetch the latest changes and checkout the main branch
+                        // Fetch the latest changes and checkout the master branch
                         sh 'git fetch origin'
-                        sh 'git checkout main'
+                        sh 'git checkout Master'  // Here is the change
                         sh 'git pull'
                     }
                 }
