@@ -20,35 +20,44 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('nodejs.org') {
-                    // يفضل استخدام 'npm ci' لتثبيت التبعيات بناءً على package-lock.json
-                    sh 'npm ci'
+                    // استخدم المسار لـ node و npm مباشرةً
+                    sh 'export PATH="/home/qmo/.nvm/versions/node/v18.20.4/bin:$PATH" && npm install'
                 }
             }
         }
         stage('Run Tests') {
             steps {
                 dir('nodejs.org') {
-                    sh 'npm test'
+                    sh 'export PATH="/home/qmo/.nvm/versions/node/v18.20.4/bin:$PATH" && npm test'
                 }
             }
         }
         stage('Build Docker Image') {
             steps {
                 dir('nodejs.org') {
-                    sh 'docker build -t bedomm180/nodejs.org .'  // تحديث اسم المستخدم واسم الصورة للدوكر
+                    sh 'docker build -t bedomm180/nodejs.org .'
                 }
             }
         }
         stage('Push Docker Image') {
             steps {
                 dir('nodejs.org') {
-                    // استخدام بيانات الاعتماد لدوكر هب
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh 'echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin'
-                        sh 'docker push bedomm180/nodejs.org'  // تأكد من صحة اسم الصورة
+                        sh 'docker push bedomm180/nodejs.org'
                     }
                 }
             }
         }
     }
+
+    post {
+        success {
+            echo 'Build, test, and push completed successfully!'
+        }
+        failure {
+            echo 'Build, test, or push failed!'
+        }
+    }
 }
+
