@@ -10,7 +10,7 @@ pipeline {
                     } else {
                         dir('nodejs.org') {
                             sh 'git fetch'
-                            sh 'git checkout master'
+                            sh 'git checkout Master'
                             sh 'git pull'
                         }
                     }
