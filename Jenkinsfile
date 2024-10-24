@@ -2,53 +2,50 @@ pipeline {
     agent any
 
     stages {
-        stage("Checkout code") {
+        stage('Clone Repository') {
             steps {
                 script {
                     if (!fileExists('nodejs.org')) {
-                        // Clone the repo if it doesn't exist
                         sh 'git clone https://github.com/abdelrahmanonline4/nodejs.org'
-                    }
-                    dir('nodejs.org') {
-                        // Fetch the latest changes and checkout the master branch
-                        sh 'git fetch origin'
-                        sh 'git checkout Master'  // Here is the change
-                        sh 'git pull'
+                    } else {
+                        dir('nodejs.org') {
+                            sh 'git fetch'
+                            sh 'git checkout master'
+                            sh 'git pull'
+                        }
                     }
                 }
             }
         }
-        stage("Install dependencies") {
+        stage('Install Dependencies') {
             steps {
                 dir('nodejs.org') {
-                    // Install npm dependencies
+                    // يفضل استخدام 'npm ci' لتثبيت التبعيات بناءً على package-lock.json
                     sh 'npm ci'
                 }
             }
         }
-        stage("Run unit testing") {
+        stage('Run Tests') {
             steps {
                 dir('nodejs.org') {
-                    // Run unit tests
-                    sh 'npm run test'
+                    sh 'npm test'
                 }
             }
         }
-        stage("Dockerize") {
+        stage('Build Docker Image') {
             steps {
                 dir('nodejs.org') {
-                    // Build the Docker image
-                    sh 'docker build -t bedomm180/nodejs.org .'
+                    sh 'docker build -t bedomm180/nodejs.org .'  // تحديث اسم المستخدم واسم الصورة للدوكر
                 }
             }
         }
-        stage("Push Docker image") {
+        stage('Push Docker Image') {
             steps {
                 dir('nodejs.org') {
-                    // Login to Docker Hub and push the image
+                    // استخدام بيانات الاعتماد لدوكر هب
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh 'echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin'
-                        sh 'docker push bedomm180/nodejs.org'
+                        sh 'docker push bedomm180/nodejs.org'  // تأكد من صحة اسم الصورة
                     }
                 }
             }
